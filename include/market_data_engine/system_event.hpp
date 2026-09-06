@@ -12,8 +12,7 @@ struct SystemEventMessage {
     char event_code;
 };
 
-// Decodes a raw ITCH payload; timestamp_ns is nanoseconds since midnight.
-// Throws std::invalid_argument unless bytes contains exactly 12 bytes of type 'S'.
+// ITCH timestamps are nanoseconds since midnight.
 SystemEventMessage parse_system_event(std::span<const std::uint8_t> bytes);
 
-} // namespace market_data_engine
+}

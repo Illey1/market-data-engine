@@ -18,7 +18,7 @@ std::uint64_t read_be48(std::span<const std::uint8_t, 6> bytes) {
     return value;
 }
 
-} // namespace
+}
 
 SystemEventMessage parse_system_event(std::span<const std::uint8_t> bytes) {
     if (bytes.size() != 12) {
@@ -36,4 +36,4 @@ SystemEventMessage parse_system_event(std::span<const std::uint8_t> bytes) {
     };
 }
 
-} // namespace market_data_engine
+}
