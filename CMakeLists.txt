@@ -13,6 +13,8 @@ add_library(market_data_engine
     src/system_event.cpp
     src/add_order.cpp
     src/binary_file.cpp
+    src/modify_order.cpp
+    src/order_tracker.cpp
 )
 target_include_directories(market_data_engine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_compile_features(market_data_engine PUBLIC cxx_std_20)
@@ -33,4 +35,12 @@ if(BUILD_TESTING)
     add_executable(binary_file_test tests/binary_file_test.cpp)
     target_link_libraries(binary_file_test PRIVATE market_data_engine)
     add_test(NAME binary_file_test COMMAND binary_file_test)
+
+    add_executable(modify_order_test tests/modify_order_test.cpp)
+    target_link_libraries(modify_order_test PRIVATE market_data_engine)
+    add_test(NAME modify_order_test COMMAND modify_order_test)
+
+    add_executable(order_tracker_test tests/order_tracker_test.cpp)
+    target_link_libraries(order_tracker_test PRIVATE market_data_engine)
+    add_test(NAME order_tracker_test COMMAND order_tracker_test)
 endif()

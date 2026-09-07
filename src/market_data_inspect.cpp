@@ -1,5 +1,7 @@
 #include "market_data_engine/add_order.hpp"
 #include "market_data_engine/binary_file.hpp"
+#include "market_data_engine/modify_order.hpp"
+#include "market_data_engine/order_tracker.hpp"
 #include "market_data_engine/system_event.hpp"
 
 #include <cstdint>
@@ -24,8 +26,13 @@ int main(int argc, char* argv[]) {
         std::uint64_t messages = 0;
         std::uint64_t system_events = 0;
         std::uint64_t add_orders = 0;
+        std::uint64_t executions = 0;
+        std::uint64_t cancels = 0;
+        std::uint64_t deletes = 0;
+        std::uint64_t replaces = 0;
         std::uint64_t other = 0;
         std::vector<std::uint8_t> payload;
+        market_data_engine::OrderTracker tracker;
 
         while (market_data_engine::read_binary_file_message(input, payload)) {
             switch (payload[0]) {
@@ -34,8 +41,32 @@ int main(int argc, char* argv[]) {
                 ++system_events;
                 break;
             case 'A':
-                (void)market_data_engine::parse_add_order(payload);
+                tracker.apply(market_data_engine::parse_add_order(payload));
                 ++add_orders;
+                break;
+            case 'F':
+                tracker.apply(market_data_engine::parse_add_order_with_mpid(payload));
+                ++add_orders;
+                break;
+            case 'E':
+                tracker.apply(market_data_engine::parse_order_executed(payload));
+                ++executions;
+                break;
+            case 'C':
+                tracker.apply(market_data_engine::parse_order_executed_with_price(payload));
+                ++executions;
+                break;
+            case 'X':
+                tracker.apply(market_data_engine::parse_order_cancel(payload));
+                ++cancels;
+                break;
+            case 'D':
+                tracker.apply(market_data_engine::parse_order_delete(payload));
+                ++deletes;
+                break;
+            case 'U':
+                tracker.apply(market_data_engine::parse_order_replace(payload));
+                ++replaces;
                 break;
             default:
                 ++other;
@@ -47,7 +78,12 @@ int main(int argc, char* argv[]) {
         std::cout << "messages: " << messages << '\n'
                   << "system_events: " << system_events << '\n'
                   << "add_orders: " << add_orders << '\n'
-                  << "other: " << other << '\n';
+                  << "executions: " << executions << '\n'
+                  << "cancels: " << cancels << '\n'
+                  << "deletes: " << deletes << '\n'
+                  << "replaces: " << replaces << '\n'
+                  << "other: " << other << '\n'
+                  << "active_orders: " << tracker.size() << '\n';
     } catch (const std::exception& error) {
         std::cerr << "Error: " << error.what() << '\n';
         return 1;

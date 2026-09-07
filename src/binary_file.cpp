@@ -25,7 +25,7 @@ bool read_binary_file_message(std::istream& input,
     }
 
     payload.resize(length);
-    if (!input.read(static_cast<char*>(static_cast<void*>(payload.data())),
+    if (!input.read(reinterpret_cast<char*>(payload.data()),
                     static_cast<std::streamsize>(payload.size()))) {
         throw std::runtime_error("Incomplete BinaryFILE payload");
     }

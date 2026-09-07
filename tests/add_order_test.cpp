@@ -14,10 +14,11 @@ int main() {
             ++failures;
         }
     };
-    const auto check_invalid = [&check](std::span<const std::uint8_t> bytes,
+    const auto check_invalid = [&check](auto parse,
+                                        std::span<const std::uint8_t> bytes,
                                         const char* description) {
         try {
-            (void)market_data_engine::parse_add_order(bytes);
+            (void)parse(bytes);
             check(false, description);
         } catch (const std::invalid_argument&) {
         } catch (...) {
@@ -48,12 +49,47 @@ int main() {
     check(message.stock == "AAPL", "stock trailing padding spaces are removed");
     check(message.price_4 == 1234567, "price retains the exact Price(4) integer");
 
-    check_invalid(std::span<const std::uint8_t>{payload}.first(35),
+    check_invalid(market_data_engine::parse_add_order,
+                  std::span<const std::uint8_t>{payload}.first(35),
                   "short payload must be rejected");
 
     auto wrong_type_payload = payload;
     wrong_type_payload[0] = 'S';
-    check_invalid(wrong_type_payload, "wrong message type must be rejected");
+    check_invalid(market_data_engine::parse_add_order, wrong_type_payload,
+                  "wrong message type must be rejected");
+
+    const std::array<std::uint8_t, 40> mpid_payload{
+        'F',
+        0x23, 0x45,
+        0xbc, 0xde,
+        0x80, 0x01, 0x02, 0x03, 0x04, 0x05,
+        0x92, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0,
+        'S',
+        0x01, 0x02, 0x03, 0x04,
+        'M', 'S', 'F', 'T', ' ', ' ', ' ', ' ',
+        0x00, 0x25, 0xad, 0x0e,
+        'G', 'S', ' ', ' ',
+    };
+    const auto mpid_message = market_data_engine::parse_add_order_with_mpid(mpid_payload);
+    check(mpid_message.stock_locate == 0x2345, "F stock locate is big-endian");
+    check(mpid_message.tracking_number == 0xbcde, "F tracking number is big-endian");
+    check(mpid_message.timestamp_ns == 0x800102030405ULL,
+          "F timestamp preserves the unsigned six-byte value");
+    check(mpid_message.order_reference == 0x923456789abcdef0ULL,
+          "F order reference preserves the unsigned eight-byte value");
+    check(mpid_message.side == 'S', "F buy/sell indicator is decoded");
+    check(mpid_message.shares == 0x01020304, "F shares are big-endian");
+    check(mpid_message.stock == "MSFT", "F stock trailing padding spaces are removed");
+    check(mpid_message.price_4 == 2469134, "F price retains the exact Price(4) integer");
+    check(mpid_message.attribution == "GS", "F attribution trailing padding spaces are removed");
+
+    check_invalid(market_data_engine::parse_add_order_with_mpid,
+                  std::span<const std::uint8_t>{mpid_payload}.first(39),
+                  "short F payload must be rejected");
+    auto wrong_mpid_type_payload = mpid_payload;
+    wrong_mpid_type_payload[0] = 'A';
+    check_invalid(market_data_engine::parse_add_order_with_mpid, wrong_mpid_type_payload,
+                  "wrong F message type must be rejected");
 
     if (failures != 0) {
         std::cerr << failures << " check(s) failed\n";
