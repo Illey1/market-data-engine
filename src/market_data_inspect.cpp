@@ -1,7 +1,7 @@
 #include "market_data_engine/add_order.hpp"
 #include "market_data_engine/binary_file.hpp"
 #include "market_data_engine/modify_order.hpp"
-#include "market_data_engine/order_tracker.hpp"
+#include "market_data_engine/order_book.hpp"
 #include "market_data_engine/system_event.hpp"
 
 #include <cstdint>
@@ -32,7 +32,7 @@ int main(int argc, char* argv[]) {
         std::uint64_t replaces = 0;
         std::uint64_t other = 0;
         std::vector<std::uint8_t> payload;
-        market_data_engine::OrderTracker tracker;
+        market_data_engine::OrderBook book;
 
         while (market_data_engine::read_binary_file_message(input, payload)) {
             switch (payload[0]) {
@@ -41,31 +41,31 @@ int main(int argc, char* argv[]) {
                 ++system_events;
                 break;
             case 'A':
-                tracker.apply(market_data_engine::parse_add_order(payload));
+                book.apply(market_data_engine::parse_add_order(payload));
                 ++add_orders;
                 break;
             case 'F':
-                tracker.apply(market_data_engine::parse_add_order_with_mpid(payload));
+                book.apply(market_data_engine::parse_add_order_with_mpid(payload));
                 ++add_orders;
                 break;
             case 'E':
-                tracker.apply(market_data_engine::parse_order_executed(payload));
+                book.apply(market_data_engine::parse_order_executed(payload));
                 ++executions;
                 break;
             case 'C':
-                tracker.apply(market_data_engine::parse_order_executed_with_price(payload));
+                book.apply(market_data_engine::parse_order_executed_with_price(payload));
                 ++executions;
                 break;
             case 'X':
-                tracker.apply(market_data_engine::parse_order_cancel(payload));
+                book.apply(market_data_engine::parse_order_cancel(payload));
                 ++cancels;
                 break;
             case 'D':
-                tracker.apply(market_data_engine::parse_order_delete(payload));
+                book.apply(market_data_engine::parse_order_delete(payload));
                 ++deletes;
                 break;
             case 'U':
-                tracker.apply(market_data_engine::parse_order_replace(payload));
+                book.apply(market_data_engine::parse_order_replace(payload));
                 ++replaces;
                 break;
             default:
@@ -83,7 +83,7 @@ int main(int argc, char* argv[]) {
                   << "deletes: " << deletes << '\n'
                   << "replaces: " << replaces << '\n'
                   << "other: " << other << '\n'
-                  << "active_orders: " << tracker.size() << '\n';
+                  << "active_orders: " << book.active_order_count() << '\n';
     } catch (const std::exception& error) {
         std::cerr << "Error: " << error.what() << '\n';
         return 1;

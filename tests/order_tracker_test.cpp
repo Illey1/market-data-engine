@@ -72,7 +72,7 @@ int main() {
           "full cancellation removes the order");
 
     tracker.apply(AddOrderMessage{22, 10, 1009, 300, 'S', 150, "MSFT", 4125000});
-    tracker.apply(OrderReplaceMessage{99, 11, 1010, 300, 301, 250, 4100000});
+    tracker.apply(OrderReplaceMessage{22, 11, 1010, 300, 301, 250, 4100000});
     active = tracker.find(301);
     check(tracker.size() == 1 && tracker.find(300) == nullptr && active != nullptr,
           "Replace moves the order to its new reference");

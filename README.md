@@ -1,8 +1,9 @@
 # market-data-engine
 
-A C++20 program that reads sequential BinaryFILE streams and tracks active displayed
+A C++20 program that reads sequential BinaryFILE streams and reconstructs displayed
+bid and ask price levels for multiple stocks from
 [Nasdaq TotalView-ITCH 5.0](https://www.nasdaqtrader.com/content/technicalsupport/specifications/dataproducts/NQTVITCHSpecification.pdf)
-orders through adds, executions, cancellations, deletions, and replacements.
+messages.
 
 Build and test with CMake 3.20 or newer and a C++20 compiler:
 
