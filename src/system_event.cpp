@@ -1,24 +1,10 @@
 #include "market_data_engine/system_event.hpp"
 
+#include "big_endian.hpp"
+
 #include <stdexcept>
 
 namespace market_data_engine {
-namespace {
-
-std::uint16_t read_be16(std::span<const std::uint8_t, 2> bytes) {
-    return static_cast<std::uint16_t>(
-        (static_cast<std::uint16_t>(bytes[0]) << 8) | bytes[1]);
-}
-
-std::uint64_t read_be48(std::span<const std::uint8_t, 6> bytes) {
-    std::uint64_t value = 0;
-    for (const std::uint8_t byte : bytes) {
-        value = (value << 8) | static_cast<std::uint64_t>(byte);
-    }
-    return value;
-}
-
-}
 
 SystemEventMessage parse_system_event(std::span<const std::uint8_t> bytes) {
     if (bytes.size() != 12) {
@@ -29,9 +15,9 @@ SystemEventMessage parse_system_event(std::span<const std::uint8_t> bytes) {
     }
 
     return SystemEventMessage{
-        read_be16(bytes.subspan<1, 2>()),
-        read_be16(bytes.subspan<3, 2>()),
-        read_be48(bytes.subspan<5, 6>()),
+        detail::read_be16(bytes.subspan<1, 2>()),
+        detail::read_be16(bytes.subspan<3, 2>()),
+        detail::read_be48(bytes.subspan<5, 6>()),
         static_cast<char>(bytes[11]),
     };
 }

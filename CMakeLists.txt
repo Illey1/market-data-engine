@@ -9,13 +9,28 @@ elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     add_compile_options(-Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion)
 endif()
 
-add_library(market_data_engine src/system_event.cpp)
+add_library(market_data_engine
+    src/system_event.cpp
+    src/add_order.cpp
+    src/binary_file.cpp
+)
 target_include_directories(market_data_engine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_compile_features(market_data_engine PUBLIC cxx_std_20)
+
+add_executable(market_data_inspect src/market_data_inspect.cpp)
+target_link_libraries(market_data_inspect PRIVATE market_data_engine)
 
 include(CTest)
 if(BUILD_TESTING)
     add_executable(system_event_test tests/system_event_test.cpp)
     target_link_libraries(system_event_test PRIVATE market_data_engine)
     add_test(NAME system_event_test COMMAND system_event_test)
+
+    add_executable(add_order_test tests/add_order_test.cpp)
+    target_link_libraries(add_order_test PRIVATE market_data_engine)
+    add_test(NAME add_order_test COMMAND add_order_test)
+
+    add_executable(binary_file_test tests/binary_file_test.cpp)
+    target_link_libraries(binary_file_test PRIVATE market_data_engine)
+    add_test(NAME binary_file_test COMMAND binary_file_test)
 endif()
