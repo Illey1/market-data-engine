@@ -4,12 +4,20 @@
 
 namespace market_data_engine {
 
+void OrderBook::apply(const StockDirectoryMessage& message) {
+    if (!stock_directory_.emplace(message.stock_locate, message.stock).second) {
+        throw std::runtime_error("duplicate Stock Directory stock locate");
+    }
+}
+
 void OrderBook::apply(const AddOrderMessage& message) {
+    validate_stock(message.stock_locate, message.stock);
     tracker_.apply(message);
     add_level(message.stock, message.side, message.price_4, message.shares);
 }
 
 void OrderBook::apply(const AddOrderWithMpidMessage& message) {
+    validate_stock(message.stock_locate, message.stock);
     tracker_.apply(message);
     add_level(message.stock, message.side, message.price_4, message.shares);
 }
@@ -84,6 +92,13 @@ std::uint64_t OrderBook::quantity_at(const std::string& stock, char side,
 
 std::size_t OrderBook::active_order_count() const noexcept {
     return tracker_.size();
+}
+
+void OrderBook::validate_stock(std::uint16_t stock_locate, const std::string& stock) const {
+    const auto entry = stock_directory_.find(stock_locate);
+    if (entry != stock_directory_.end() && entry->second != stock) {
+        throw std::runtime_error("Add stock does not match the Stock Directory symbol");
+    }
 }
 
 ActiveOrder OrderBook::original_order(std::uint64_t order_reference) const {

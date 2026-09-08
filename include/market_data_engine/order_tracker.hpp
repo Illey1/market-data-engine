@@ -34,7 +34,9 @@ public:
 
 private:
     void add(ActiveOrder order);
-    void reduce(std::uint64_t order_reference, std::uint32_t shares);
+    ActiveOrder& checked_order(std::uint64_t order_reference, std::uint16_t stock_locate);
+    void reduce(std::uint64_t order_reference, std::uint16_t stock_locate,
+                std::uint32_t shares);
 
     std::unordered_map<std::uint64_t, ActiveOrder> orders_;
 };

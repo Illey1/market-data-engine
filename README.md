@@ -18,3 +18,9 @@ Inspect message counts and the final active order count in a decompressed Binary
 ```sh
 ./build/market_data_inspect <decompressed-binaryfile>
 ```
+
+Use `-` to read standard input and `--max-messages N` to stop after N payloads:
+
+```sh
+gzip -dc sample.NASDAQ_ITCH50.gz | ./build/market_data_inspect - --max-messages 1000000
+```

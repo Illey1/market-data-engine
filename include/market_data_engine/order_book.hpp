@@ -1,6 +1,7 @@
 #pragma once
 
 #include "market_data_engine/order_tracker.hpp"
+#include "market_data_engine/stock_directory.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -19,6 +20,7 @@ struct PriceLevel {
 
 class OrderBook {
 public:
+    void apply(const StockDirectoryMessage& message);
     void apply(const AddOrderMessage& message);
     void apply(const AddOrderWithMpidMessage& message);
     void apply(const OrderExecutedMessage& message);
@@ -40,6 +42,7 @@ private:
     };
 
     ActiveOrder original_order(std::uint64_t order_reference) const;
+    void validate_stock(std::uint16_t stock_locate, const std::string& stock) const;
     void add_level(const std::string& stock, char side, std::uint32_t price_4,
                    std::uint64_t shares);
     void remove_level(const std::string& stock, char side, std::uint32_t price_4,
@@ -47,6 +50,7 @@ private:
 
     OrderTracker tracker_;
     std::unordered_map<std::string, SymbolBook> books_;
+    std::unordered_map<std::uint16_t, std::string> stock_directory_;
 };
 
 }
