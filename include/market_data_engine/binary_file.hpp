@@ -6,7 +6,13 @@
 
 namespace market_data_engine {
 
-bool read_binary_file_message(std::istream& input,
-                              std::vector<std::uint8_t>& payload);
+enum class BinaryFileReadResult {
+    message,
+    end_of_session,
+    end_of_file,
+};
+
+BinaryFileReadResult read_binary_file_message(
+    std::istream& input, std::vector<std::uint8_t>& payload);
 
 }

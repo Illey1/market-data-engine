@@ -8,11 +8,15 @@
 
 namespace market_data_engine {
 
-bool read_binary_file_message(std::istream& input,
-                              std::vector<std::uint8_t>& payload) {
+BinaryFileReadResult read_binary_file_message(
+    std::istream& input, std::vector<std::uint8_t>& payload) {
     std::array<char, 2> prefix{};
     if (!input.read(prefix.data(), 2)) {
-        throw std::runtime_error("Incomplete BinaryFILE length prefix or missing terminator");
+        if (input.gcount() == 0 && input.eof() && !input.bad()) {
+            payload.clear();
+            return BinaryFileReadResult::end_of_file;
+        }
+        throw std::runtime_error("Incomplete BinaryFILE length prefix or stream read error");
     }
 
     const std::array<std::uint8_t, 2> length_bytes{
@@ -21,7 +25,7 @@ bool read_binary_file_message(std::istream& input,
     const auto length = detail::read_be16(length_bytes);
     if (length == 0) {
         payload.clear();
-        return false;
+        return BinaryFileReadResult::end_of_session;
     }
 
     payload.resize(length);
@@ -29,7 +33,7 @@ bool read_binary_file_message(std::istream& input,
                     static_cast<std::streamsize>(payload.size()))) {
         throw std::runtime_error("Incomplete BinaryFILE payload");
     }
-    return true;
+    return BinaryFileReadResult::message;
 }
 
 }

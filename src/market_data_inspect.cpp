@@ -60,9 +60,18 @@ int main(int argc, char* argv[]) {
         std::uint64_t other = 0;
         std::vector<std::uint8_t> payload;
         market_data_engine::OrderBook book;
+        std::string_view end_reason = "message_limit";
 
-        while ((max_messages == 0 || messages < max_messages)
-               && market_data_engine::read_binary_file_message(*input, payload)) {
+        while (max_messages == 0 || messages < max_messages) {
+            const auto result = market_data_engine::read_binary_file_message(*input, payload);
+            if (result == market_data_engine::BinaryFileReadResult::end_of_session) {
+                end_reason = "session_terminator";
+                break;
+            }
+            if (result == market_data_engine::BinaryFileReadResult::end_of_file) {
+                end_reason = "eof";
+                break;
+            }
             switch (payload[0]) {
             case 'S':
                 (void)market_data_engine::parse_system_event(payload);
@@ -116,7 +125,12 @@ int main(int argc, char* argv[]) {
                   << "deletes: " << deletes << '\n'
                   << "replaces: " << replaces << '\n'
                   << "other: " << other << '\n'
-                  << "active_orders: " << book.active_order_count() << '\n';
+                  << "active_orders: " << book.active_order_count() << '\n'
+                  << "end_reason: " << end_reason << '\n';
+        if (end_reason == "eof") {
+            std::cerr << "Warning: BinaryFILE ended without the specification's "
+                         "zero-length session terminator.\n";
+        }
     } catch (const std::exception& error) {
         std::cerr << "Error: " << error.what() << '\n';
         return 1;
