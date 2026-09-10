@@ -41,7 +41,6 @@ private:
         std::map<std::uint32_t, std::uint64_t> asks;
     };
 
-    ActiveOrder original_order(std::uint64_t order_reference) const;
     void validate_stock(std::uint16_t stock_locate, const std::string& stock) const;
     void add_level(const std::string& stock, char side, std::uint32_t price_4,
                    std::uint64_t shares);

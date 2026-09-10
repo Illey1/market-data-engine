@@ -34,7 +34,11 @@ int main() {
               active->price_4 == 1234500,
           "Add preserves the displayed order fields");
 
-    tracker.apply(OrderExecutedMessage{12, 2, 1001, 100, 40, 900});
+    const auto executed = tracker.apply(OrderExecutedMessage{12, 2, 1001, 100, 40, 900});
+    check(executed.order_reference == 100 && executed.stock_locate == 12 &&
+              executed.side == 'B' && executed.remaining_shares == 100 &&
+              executed.stock == "AAPL" && executed.price_4 == 1234500,
+          "partial execution returns the pre-update order state");
     active = tracker.find(100);
     check(active != nullptr && active->remaining_shares == 60,
           "partial execution reduces remaining shares");
@@ -47,7 +51,11 @@ int main() {
     active = tracker.find(101);
     check(active != nullptr && active->remaining_shares == 75,
           "partial cancellation reduces remaining shares");
-    tracker.apply(OrderDeleteMessage{12, 6, 1005, 101});
+    const auto deleted = tracker.apply(OrderDeleteMessage{12, 6, 1005, 101});
+    check(deleted.order_reference == 101 && deleted.stock_locate == 12 &&
+              deleted.side == 'B' && deleted.remaining_shares == 75 &&
+              deleted.stock == "AAPL" && deleted.price_4 == 1234500,
+          "Delete returns the removed order state");
     check(tracker.size() == 0 && tracker.find(101) == nullptr,
           "Delete removes all remaining shares");
 
@@ -72,7 +80,12 @@ int main() {
           "full cancellation removes the order");
 
     tracker.apply(AddOrderMessage{22, 10, 1009, 300, 'S', 150, "MSFT", 4125000});
-    tracker.apply(OrderReplaceMessage{22, 11, 1010, 300, 301, 250, 4100000});
+    const auto replaced = tracker.apply(
+        OrderReplaceMessage{22, 11, 1010, 300, 301, 250, 4100000});
+    check(replaced.order_reference == 300 && replaced.stock_locate == 22 &&
+              replaced.side == 'S' && replaced.remaining_shares == 150 &&
+              replaced.stock == "MSFT" && replaced.price_4 == 4125000,
+          "Replace returns the original order state");
     active = tracker.find(301);
     check(tracker.size() == 1 && tracker.find(300) == nullptr && active != nullptr,
           "Replace moves the order to its new reference");

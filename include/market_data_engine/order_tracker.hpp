@@ -23,22 +23,25 @@ class OrderTracker {
 public:
     void apply(const AddOrderMessage& message);
     void apply(const AddOrderWithMpidMessage& message);
-    void apply(const OrderExecutedMessage& message);
-    void apply(const OrderExecutedWithPriceMessage& message);
-    void apply(const OrderCancelMessage& message);
-    void apply(const OrderDeleteMessage& message);
-    void apply(const OrderReplaceMessage& message);
+    // Lifecycle messages return a copy of the pre-update order.
+    ActiveOrder apply(const OrderExecutedMessage& message);
+    ActiveOrder apply(const OrderExecutedWithPriceMessage& message);
+    ActiveOrder apply(const OrderCancelMessage& message);
+    ActiveOrder apply(const OrderDeleteMessage& message);
+    ActiveOrder apply(const OrderReplaceMessage& message);
 
     std::size_t size() const noexcept;
     const ActiveOrder* find(std::uint64_t order_reference) const noexcept;
 
 private:
-    void add(ActiveOrder order);
-    ActiveOrder& checked_order(std::uint64_t order_reference, std::uint16_t stock_locate);
-    void reduce(std::uint64_t order_reference, std::uint16_t stock_locate,
-                std::uint32_t shares);
+    using Orders = std::unordered_map<std::uint64_t, ActiveOrder>;
 
-    std::unordered_map<std::uint64_t, ActiveOrder> orders_;
+    void add(ActiveOrder order);
+    Orders::iterator checked_order(std::uint64_t order_reference, std::uint16_t stock_locate);
+    ActiveOrder reduce(std::uint64_t order_reference, std::uint16_t stock_locate,
+                       std::uint32_t shares);
+
+    Orders orders_;
 };
 
 }
