@@ -23,32 +23,37 @@ void OrderBook::apply(const AddOrderWithMpidMessage& message) {
 }
 
 void OrderBook::apply(const OrderExecutedMessage& message) {
-    const auto original = tracker_.apply(message);
+    const auto original = original_order(message.order_reference);
+    tracker_.apply(message);
     remove_level(original.stock, original.side, original.price_4,
                  message.executed_shares);
 }
 
 void OrderBook::apply(const OrderExecutedWithPriceMessage& message) {
-    const auto original = tracker_.apply(message);
+    const auto original = original_order(message.order_reference);
+    tracker_.apply(message);
     // C executions reduce the original displayed level, regardless of execution price.
     remove_level(original.stock, original.side, original.price_4,
                  message.executed_shares);
 }
 
 void OrderBook::apply(const OrderCancelMessage& message) {
-    const auto original = tracker_.apply(message);
+    const auto original = original_order(message.order_reference);
+    tracker_.apply(message);
     remove_level(original.stock, original.side, original.price_4,
                  message.cancelled_shares);
 }
 
 void OrderBook::apply(const OrderDeleteMessage& message) {
-    const auto original = tracker_.apply(message);
+    const auto original = original_order(message.order_reference);
+    tracker_.apply(message);
     remove_level(original.stock, original.side, original.price_4,
                  original.remaining_shares);
 }
 
 void OrderBook::apply(const OrderReplaceMessage& message) {
-    const auto original = tracker_.apply(message);
+    const auto original = original_order(message.original_order_reference);
+    tracker_.apply(message);
     remove_level(original.stock, original.side, original.price_4,
                  original.remaining_shares);
     add_level(original.stock, original.side, message.price_4, message.shares);
@@ -94,6 +99,15 @@ void OrderBook::validate_stock(std::uint16_t stock_locate, const std::string& st
     if (entry != stock_directory_.end() && entry->second != stock) {
         throw std::runtime_error("Add stock does not match the Stock Directory symbol");
     }
+}
+
+ActiveOrder OrderBook::original_order(std::uint64_t order_reference) const {
+    const auto* order = tracker_.find(order_reference);
+    if (order == nullptr) {
+        throw std::runtime_error("unknown order reference");
+    }
+    // Preserve the fields even if the tracker erases or replaces this order.
+    return *order;
 }
 
 void OrderBook::add_level(const std::string& stock, char side,
